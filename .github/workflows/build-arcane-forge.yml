@@ -35,22 +35,38 @@ jobs:
           test -f ArcaneForge-1.21.1/build_mod.sh
 
       - name: Compile Arcane Forge
+        id: compile
+        continue-on-error: true
         shell: bash
         run: |
-          set -euo pipefail
+          set -o pipefail
           chmod +x ArcaneForge-1.21.1/build_mod.sh ArcaneForge-1.21.1/tools/bootstrap-gradle.sh
-          ./ArcaneForge-1.21.1/build_mod.sh clean build --no-daemon --stacktrace
+          ./ArcaneForge-1.21.1/build_mod.sh clean build --no-daemon --stacktrace 2>&1 | tee arcane-build.log
+
+      - name: Upload complete Gradle diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ArcaneForge-build-log
+          path: arcane-build.log
+          if-no-files-found: error
+          retention-days: 7
 
       - name: List build outputs
-        if: success()
+        if: steps.compile.outcome == 'success'
         shell: bash
         run: find ArcaneForge-1.21.1/build/libs -maxdepth 1 -type f -name '*.jar' -print
 
       - name: Upload compiled JAR
-        if: success()
+        if: steps.compile.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: ArcaneForge-1.21.1-JAR
           path: ArcaneForge-1.21.1/build/libs/*.jar
           if-no-files-found: error
           retention-days: 30
+
+      - name: Mark compilation failure
+        if: steps.compile.outcome == 'failure'
+        shell: bash
+        run: exit 1
