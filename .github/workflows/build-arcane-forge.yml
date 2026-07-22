@@ -47,8 +47,8 @@ jobs:
           text = text.replace('import net.neoforged.api.distmarker.Dist;\n', '')
           text = text.replace('import net.neoforged.fml.DistExecutor;\n', '')
           old = '''        DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
-                  () -> () -> context.enqueueWork(() -> ClientSpellVisuals.spawn(payload)));'''
-          new = '''        context.enqueueWork(() -> ClientSpellVisuals.spawn(payload));'''
+                  () -> () -> context.enqueueWork(() -> ClientSpellVisuals.spawn(payload)));'''.replace('                  ()', '                ()')
+          new = '        context.enqueueWork(() -> ClientSpellVisuals.spawn(payload));'
           if old not in text:
               raise SystemExit('ClientPayloadHandler compatibility target not found')
           handler.write_text(text.replace(old, new), encoding='utf-8')
@@ -85,7 +85,7 @@ jobs:
         with:
           name: ArcaneForge-build-log
           path: arcane-build.log
-          if-no-files-found: error
+          if-no-files-found: ignore
           retention-days: 7
 
       - name: List build outputs
