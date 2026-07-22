@@ -51,8 +51,13 @@ jobs:
               }
           }
           JAVA
-          sed -i 's/SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS,/SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS,/' ArcaneForge-1.21.1/src/main/java/com/mrpeanutay/arcaneforge/content/spell/SpellExecutor.java
-          grep -q 'GENERIC_EXPLODE.value()' ArcaneForge-1.21.1/src/main/java/com/mrpeanutay/arcaneforge/content/spell/SpellExecutor.java
+
+          executor='ArcaneForge-1.21.1/src/main/java/com/mrpeanutay/arcaneforge/content/spell/SpellExecutor.java'
+          sed -i 's/SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS,/SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS,/' "$executor"
+          sed -i '/Vec3 end = clipBlocks(level, caster, start, direction, range);/a\        final Vec3 traceEnd = end;' "$executor"
+          sed -i 's/entity.getBoundingBox().getCenter(), start, end)/entity.getBoundingBox().getCenter(), start, traceEnd)/g' "$executor"
+          grep -q 'GENERIC_EXPLODE.value()' "$executor"
+          test "$(grep -c 'start, traceEnd)' "$executor")" -eq 2
 
       - name: Install Gradle 8.10.2
         shell: bash
