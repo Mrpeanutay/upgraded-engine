@@ -33,6 +33,35 @@ jobs:
           tar -xJf ArcaneForge-1.21.1-source.tar.xz
           test -f ArcaneForge-1.21.1/build.gradle
 
+      - name: Apply NeoForge 1.21.1 compatibility fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          root = Path('ArcaneForge-1.21.1/src/main/java/com/mrpeanutay/arcaneforge')
+
+          handler = root / 'network/ClientPayloadHandler.java'
+          text = handler.read_text(encoding='utf-8')
+          text = text.replace('import net.neoforged.api.distmarker.Dist;\n', '')
+          text = text.replace('import net.neoforged.fml.DistExecutor;\n', '')
+          old = '''        DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                  () -> () -> context.enqueueWork(() -> ClientSpellVisuals.spawn(payload)));'''
+          new = '''        context.enqueueWork(() -> ClientSpellVisuals.spawn(payload));'''
+          if old not in text:
+              raise SystemExit('ClientPayloadHandler compatibility target not found')
+          handler.write_text(text.replace(old, new), encoding='utf-8')
+
+          executor = root / 'content/spell/SpellExecutor.java'
+          text = executor.read_text(encoding='utf-8')
+          old = 'SoundEvents.GENERIC_EXPLODE, SoundSource.PLAYERS,'
+          new = 'SoundEvents.GENERIC_EXPLODE.value(), SoundSource.PLAYERS,'
+          if old not in text:
+              raise SystemExit('SpellExecutor sound compatibility target not found')
+          executor.write_text(text.replace(old, new), encoding='utf-8')
+          PY
+
       - name: Install Gradle 8.10.2
         shell: bash
         run: |
